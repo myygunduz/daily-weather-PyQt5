@@ -1,17 +1,13 @@
-import http.client
+import requests
 from Modules.jsonHelper import readJ
-
+import json
 def weather(city):
-    conn = http.client.HTTPSConnection("api.collectapi.com")
     apikey = readJ("Databases/APIkey.json")
     headers = {
         'content-type': "application/json",
         'authorization': apikey['api_key']
         }
 
-    conn.request("GET", f"/weather/getWeather?data.lang=tr&data.city={city.lower()}", headers=headers)
+    response = requests.get(f"https://api.collectapi.com/weather/getWeather?data.lang=tr&data.city={city.lower()}",headers=headers).json()
 
-    res = conn.getresponse()
-    data = res.read()
-
-    return data.decode("utf-8")
+    return response
