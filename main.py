@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (QPushButton,
                                 QHBoxLayout,
                                 QLabel,
                                 QGroupBox)
-from PyQt5.QtGui import (QCursor,QMovie,QPainter,QFont)
+from PyQt5.QtGui import (QCursor,QMovie,QPainter,QFont,QIcon)
 from PyQt5.QtCore import Qt
 from Modules.jsonHelper import writeJ, readJ
 from Modules.weather import weather
@@ -54,11 +54,36 @@ class Interface(QWidget):
         self.westGroupBox = QGroupBox()
         self.westLayout = QVBoxLayout()
         self.westGroupBox.setFixedWidth(300)
+        
+
 
         self.searchbar = QLineEdit(self)
-        self.searchbar.setStyleSheet("""
+        self.searchbar.setFixedHeight(50)
+        self.searchbar.setFont(QFont('Times', 15))
+        self.searchbar.setPlaceholderText("Şehir İsmi Girin")
+        self.searchbar.setAlignment(Qt.AlignCenter)
+        self.searchbar.setStyleSheet("""background-color: #eeeeee;
                                         """)
-        self.westLayout.addWidget(self.searchbar)
+
+        self.searchbutton = QPushButton()
+        self.searchbutton.setCursor(QCursor(Qt.PointingHandCursor))
+        self.searchbutton.setStyleSheet("""background-color: #eeeeee;
+                                        background-image: url(Databases/search-icon.png);
+                                        """)
+        self.searchbutton.setFixedSize(50,50)
+
+        self.searchGroupBox = QGroupBox()
+        self.searchLayout= QHBoxLayout()
+
+        self.searchLayout.addWidget(self.searchbar)
+        self.searchLayout.addWidget(self.searchbutton)
+
+
+        self.searchGroupBox.setLayout(self.searchLayout)
+        self.searchGroupBox.setStyleSheet("""background-color: #eeeeee;
+                                        border:2px solid #eeeeee;""")
+        self.westLayout.addWidget(self.searchGroupBox)
+
         self.favorite_cities = readJ("Databases/favorite_cities.json")
 
         if not (not self.favorite_cities['names_of_cities']):
