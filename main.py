@@ -56,6 +56,8 @@ class Interface(QWidget):
         self.westGroupBox.setFixedWidth(300)
 
         self.searchbar = QLineEdit(self)
+        self.searchbar.setStyleSheet("""
+                                        """)
         self.westLayout.addWidget(self.searchbar)
         self.favorite_cities = readJ("Databases/favorite_cities.json")
 
