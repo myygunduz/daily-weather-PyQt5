@@ -1,0 +1,40 @@
+{   
+    "westGroupBox":[
+        "border:2px solid #079096;",
+        "border-top-left-radius: 30px;",
+        "border-bottom-left-radius: 30px;",
+        "background-color: #079096;"
+    ],
+    "searchGroupBox":[
+        "background-color: #eeeeee;",
+        "border:2px solid #eeeeee;"],
+    "searchbar":["background-color: #eeeeee;"],
+    "searchbutton":[
+        "background-color: #eeeeee;",
+        "background-image: url(Databases/Images/search-icon.png);"],
+    "fovorite_buttons":[
+        "background-color: #aad8d3;",
+        "color: #222222;",
+        "border:2px solid #aad8d3;",
+        "border-radius: 25px;"],
+
+    "eastGroupBox":[
+        "border:2px solid #079096;",
+        "border-top-right-radius: 30px;",
+        "border-bottom-right-radius: 30px;"],
+    "cityname":[
+        "color: #eeeeee;",
+        "border:0px solid #079096;"],
+    "icon":[
+        "border:0px solid #079096;"],
+    "degree":[
+        "color: #eeeeee;",
+        "border:0px solid #079096;"],
+    "date":[
+        "color: #eeeeee;",
+        "border:0px solid #079096;"],
+    "favoritebutton":[
+        "border:0px solid #079096;"
+    ]
+
+}

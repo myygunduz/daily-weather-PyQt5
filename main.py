@@ -7,8 +7,13 @@ from PyQt5.QtWidgets import (QPushButton,
                                 QHBoxLayout,
                                 QLabel,
                                 QGroupBox)
-from PyQt5.QtGui import (QCursor,QMovie,QPainter,QFont,QIcon)
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import (QCursor,
+                        QMovie,
+                        QPainter,
+                        QFont,
+                        QIcon,
+                        QPixmap)
+from PyQt5.QtCore import Qt,QSize
 from Modules.jsonHelper import writeJ, readJ
 from Modules.weather import weather
 class Interface(QWidget):
@@ -16,38 +21,73 @@ class Interface(QWidget):
         super().__init__()
         self.setGeometry(500, 50, 1200, 680)
         self.setFixedSize(1200, 680)
-        self.movie = QMovie("Databases/weather.gif")
+        self.css = readJ("Databases/Jsons/css.json")
+
+        self.movie = QMovie("Databases/Images/weather.gif")
         self.movie.frameChanged.connect(self.repaint)
         self.movie.start()
+
         self.showLayouts()
         
     def showLayouts(self):
         self.East_Area_Layout = self.eastArea()
         self.West_Area_Layout = self.westArea()
-        self.mainLayout = QGridLayout()
-        self.mainLayout.addWidget(self.West_Area_Layout,0,0)
-        self.mainLayout.addWidget(self.East_Area_Layout,0,1)
-        self.setLayout(self.mainLayout)
 
+        self.SouthLayout = QGridLayout()
+        self.SouthLayout.addWidget(self.West_Area_Layout,0,0)
+        self.SouthLayout.addWidget(self.East_Area_Layout,0,1)
+
+        self.setLayout(self.SouthLayout)
     def eastArea(self):
-        self.eastGroupBox = QGroupBox()
-        self.eastLayout = QVBoxLayout()
-        self.northeastLayout = QHBoxLayout()
-
-        self.icon = QPushButton(self)  
-        self.northeastLayout.addWidget(self.icon)
+        self.icon = QLabel(self)  
+        self.icon.setFixedSize(200,100)
 
         self.degree = QLabel(self)
-        self.northeastLayout.addWidget(self.degree)
+        self.degree.setFont(QFont('Times', 15))
 
-        self.northeastLayout.addSpacing(300)
-
-        
         self.date = QLabel(self)
+        self.date.setFont(QFont('Times', 15))
+
+
+        self.northeastLayout = QHBoxLayout()
+
+        self.northeastLayout.addWidget(self.icon)
+        self.northeastLayout.addWidget(self.degree)
+        self.northeastLayout.addSpacing(300)
         self.northeastLayout.addWidget(self.date)
+
         self.northeastLayout.setAlignment(Qt.AlignTop)
+
+        self.cityname = QLabel(self,text="Şehir Seçmeniz Gerekiyor")
+        self.cityname.setAlignment(Qt.AlignCenter)
+        self.cityname.setFont(QFont('Times', 30))
+
+        self.favoritebutton = QPushButton(self)
+        self.favoritebutton.clicked.connect(self.settingFavoriteCity)
+        self.favoritebutton.setFixedSize(50,50)
+        self.favoritebutton.setCursor(QCursor(Qt.PointingHandCursor))
+        self.favoritebutton.setIconSize(QSize(50,50))
+
+        self.eastLayout = QVBoxLayout()
+        self.eastLayout.setAlignment(Qt.AlignTop)
+        self.eastLayout.addWidget(self.cityname)
         self.eastLayout.addLayout(self.northeastLayout)
+        self.eastLayout.addSpacing(600)
+        self.eastLayout.addWidget(self.favoritebutton)
+        
+
+        self.eastGroupBox = QGroupBox()
         self.eastGroupBox.setLayout(self.eastLayout)
+
+        self.eastGroupBox.setStyleSheet("".join(i for i in self.css['eastGroupBox']))
+        self.cityname.setStyleSheet("".join(i for i in self.css['cityname']))
+        self.icon.setStyleSheet("".join(i for i in self.css['icon']))
+        self.degree.setStyleSheet("".join(i for i in self.css['degree']))
+        self.date.setStyleSheet("".join(i for i in self.css['date']))
+        self.favoritebutton.setStyleSheet("".join(i for i in self.css['favoritebutton']))
+        
+        
+
         return self.eastGroupBox
 
     def westArea(self):
@@ -62,14 +102,10 @@ class Interface(QWidget):
         self.searchbar.setFont(QFont('Times', 15))
         self.searchbar.setPlaceholderText("Şehir İsmi Girin")
         self.searchbar.setAlignment(Qt.AlignCenter)
-        self.searchbar.setStyleSheet("""background-color: #eeeeee;
-                                        """)
 
         self.searchbutton = QPushButton()
+        self.searchbutton.clicked.connect(lambda: self.getWeatherInfo(self.searchbar.text()))
         self.searchbutton.setCursor(QCursor(Qt.PointingHandCursor))
-        self.searchbutton.setStyleSheet("""background-color: #eeeeee;
-                                        background-image: url(Databases/search-icon.png);
-                                        """)
         self.searchbutton.setFixedSize(50,50)
 
         self.searchGroupBox = QGroupBox()
@@ -80,38 +116,66 @@ class Interface(QWidget):
 
 
         self.searchGroupBox.setLayout(self.searchLayout)
-        self.searchGroupBox.setStyleSheet("""background-color: #eeeeee;
-                                        border:2px solid #eeeeee;""")
         self.westLayout.addWidget(self.searchGroupBox)
 
-        self.favorite_cities = readJ("Databases/favorite_cities.json")
-
-        if not (not self.favorite_cities['names_of_cities']):
+        self.favorite_cities = readJ("Databases/Jsons/favorite_cities.json")
+        self.buttons = []
+        if len(self.favorite_cities['names_of_cities']):
             for i in self.favorite_cities['names_of_cities']:
-                button = QPushButton(self,text=i.capitalize())
-                text = button.text()
-                button.clicked.connect(lambda ch, text=text : self.havadurumu(text))
-                button.setStyleSheet("""background-color: #aad8d3;
-                                        color: #222222;
-                                        border:2px solid #aad8d3;
-                                        border-radius: 25px;""")
-                button.setCursor(QCursor(Qt.PointingHandCursor))
-                button.setFixedHeight(50)
-                button.setFont(QFont('Times', 15))
-                self.westLayout.addWidget(button)
+                self.createbutton(i)
 
         self.westLayout.setAlignment(Qt.AlignTop)
         self.westGroupBox.setLayout(self.westLayout)
-        self.westGroupBox.setStyleSheet("border:2px solid #079096;border-top-left-radius: 30px;border-bottom-left-radius: 30px;background-color: #079096;")
+        
+        self.westGroupBox.setStyleSheet("".join(i for i in self.css['westGroupBox']))
+        self.searchbar.setStyleSheet("".join(i for i in self.css['searchbar']))
+        self.searchbutton.setStyleSheet("".join(i for i in self.css['searchbutton']))
+        self.searchGroupBox.setStyleSheet("".join(i for i in self.css['searchGroupBox']))
+
         return self.westGroupBox
 
-    def havadurumu(self, city_name:str):
-        self.weather = weather(city_name)['result'][0]
-        print(self.weather)
-        #self.icon.setStyleSheet(f"background-image: url({self.weather['icon']});")
-        self.degree.setText(f"Hava {self.weather['description'].capitalize()} {self.weather['degree']}°C\nEn Az: {self.weather['min']} En Fazla: {self.weather['max']} Nem: {self.weather['humidity']}")
-        self.date.setText(f"{self.weather['date']}\n{self.weather['day']}")
+    def getWeatherInfo(self, city_name:str):
+        self.searchbar.setText(" ")
+        if self.cityname.text().lower() != city_name.lower():
+            try:
+                self.weather = weather(city_name)['result'][0]
 
+                self.cityname.setText(city_name.capitalize())
+                self.icon.setPixmap(QPixmap(f"Databases/Images/{self.weather['status']}.png"))
+                self.degree.setText(f"Hava {self.weather['description'].capitalize()} {self.weather['degree']}°C\nEn Az: {self.weather['min']} En Fazla: {self.weather['max']} Nem: {self.weather['humidity']}")
+                self.date.setText(f"{self.weather['date']}\n{self.weather['day']}")
+                
+                heart_mode = "heartFalse"
+                if city_name.lower() in self.favorite_cities['names_of_cities']: heart_mode = "heartTrue"
+                
+                self.favoritebutton.setIcon(QIcon(f"Databases/Images/{heart_mode}.png"))
+            except IndexError:
+                self.searchbar.setText("Şehir Bulunamadı")
+    
+    def settingFavoriteCity(self):
+        cityname=self.cityname.text().lower()
+        if cityname in self.favorite_cities['names_of_cities'] :
+            if len(self.favorite_cities['names_of_cities']) == 1: return
+            index = self.favorite_cities['names_of_cities'].index(cityname)
+            self.favorite_cities['names_of_cities'].pop(index)
+            self.westLayout.removeWidget(self.buttons[index])
+            self.buttons.pop(index)
+            self.favoritebutton.setIcon(QIcon(f"Databases/Images/heartFalse.png"))
+        else:
+            self.favorite_cities['names_of_cities'].append(cityname.strip())
+            self.createbutton(cityname)
+            self.favoritebutton.setIcon(QIcon(f"Databases/Images/heartTrue.png"))
+        writeJ(self.favorite_cities,"Databases/Jsons/favorite_cities.json")
+
+    def createbutton(self,text):
+        button = QPushButton(self,text=text.capitalize())
+        button.clicked.connect(lambda ch, text=text : self.getWeatherInfo(text))
+        button.setStyleSheet("".join(i for i in self.css['fovorite_buttons']))
+        button.setCursor(QCursor(Qt.PointingHandCursor))
+        button.setFixedHeight(50)
+        button.setFont(QFont('Times', 15))
+        self.buttons.append(button)
+        self.westLayout.addWidget(button)
     def paintEvent(self, event):
         currentFrame = self.movie.currentPixmap()
         frameRect = currentFrame.rect()
