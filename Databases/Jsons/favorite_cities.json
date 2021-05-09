@@ -1,5 +1,15 @@
 {
-  "names_of_cities": [
-    "istanbul"
+  "favorite_cities": [
+    "istanbul",
+    "tokyo"
+  ],
+  "cities": [
+    "tokyo",
+    "delhi",
+    "şanghay",
+    "mumbai",
+    "sao paulo",
+    "pekin",
+    "city-Meksika"
   ]
 }

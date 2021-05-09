@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (QPushButton,
                                 QVBoxLayout,
                                 QHBoxLayout,
                                 QLabel,
+                                QCompleter,
                                 QGroupBox)
 from PyQt5.QtGui import (QCursor,
                         QMovie,
@@ -14,14 +15,17 @@ from PyQt5.QtGui import (QCursor,
                         QIcon,
                         QPixmap)
 from PyQt5.QtCore import Qt,QSize
+from Modules.customwidgets import ImageBox
 from Modules.jsonHelper import writeJ, readJ
 from Modules.weather import weather
 class Interface(QWidget):
     def __init__(self):
         super().__init__()
         self.setGeometry(500, 50, 1200, 680)
-        self.setFixedSize(1200, 680)
+        self.setFixedSize(1200,680)
+        
         self.css = readJ("Databases/Jsons/css.json")
+        self.citiesJson = readJ("Databases/Jsons/cities.json")
 
         self.movie = QMovie("Databases/Images/weather.gif")
         self.movie.frameChanged.connect(self.repaint)
@@ -39,8 +43,8 @@ class Interface(QWidget):
 
         self.setLayout(self.SouthLayout)
     def eastArea(self):
-        self.icon = QLabel(self)  
-        self.icon.setFixedSize(200,100)
+        self.icon = ImageBox(source = "")  
+        self.icon.setFixedSize(120,120)
 
         self.degree = QLabel(self)
         self.degree.setFont(QFont('Times', 15))
@@ -50,13 +54,13 @@ class Interface(QWidget):
 
 
         self.northeastLayout = QHBoxLayout()
-
+        self.northeastLayout.setAlignment(Qt.AlignLeft)
         self.northeastLayout.addWidget(self.icon)
+        self.northeastLayout.addSpacing(20)
         self.northeastLayout.addWidget(self.degree)
         self.northeastLayout.addSpacing(300)
         self.northeastLayout.addWidget(self.date)
 
-        self.northeastLayout.setAlignment(Qt.AlignTop)
 
         self.cityname = QLabel(self,text="Şehir Seçmeniz Gerekiyor")
         self.cityname.setAlignment(Qt.AlignCenter)
@@ -69,7 +73,6 @@ class Interface(QWidget):
         self.favoritebutton.setIconSize(QSize(50,50))
 
         self.eastLayout = QVBoxLayout()
-        self.eastLayout.setAlignment(Qt.AlignTop)
         self.eastLayout.addWidget(self.cityname)
         self.eastLayout.addLayout(self.northeastLayout)
         self.eastLayout.addSpacing(600)
@@ -95,13 +98,16 @@ class Interface(QWidget):
         self.westLayout = QVBoxLayout()
         self.westGroupBox.setFixedWidth(300)
         
-
-
+        Completer = QCompleter(self.citiesJson['cities'])
+        Completer.popup().setFont(QFont('Times', 15))
         self.searchbar = QLineEdit(self)
+        self.searchbar.setCompleter(Completer)
         self.searchbar.setFixedHeight(50)
         self.searchbar.setFont(QFont('Times', 15))
         self.searchbar.setPlaceholderText("Şehir İsmi Girin")
+        self.searchbar.textChanged.connect(self.searchFavorite)
         self.searchbar.setAlignment(Qt.AlignCenter)
+
 
         self.searchbutton = QPushButton()
         self.searchbutton.clicked.connect(lambda: self.getWeatherInfo(self.searchbar.text()))
@@ -118,15 +124,14 @@ class Interface(QWidget):
         self.searchGroupBox.setLayout(self.searchLayout)
         self.westLayout.addWidget(self.searchGroupBox)
 
-        self.favorite_cities = readJ("Databases/Jsons/favorite_cities.json")
         self.buttons = []
-        if len(self.favorite_cities['names_of_cities']):
-            for i in self.favorite_cities['names_of_cities']:
+        if len(self.citiesJson['favorite_cities']):
+            for i in self.citiesJson['favorite_cities']:
                 self.createbutton(i)
 
         self.westLayout.setAlignment(Qt.AlignTop)
         self.westGroupBox.setLayout(self.westLayout)
-        
+        Completer.popup().setStyleSheet("".join(i for i in self.css['Completer']))
         self.westGroupBox.setStyleSheet("".join(i for i in self.css['westGroupBox']))
         self.searchbar.setStyleSheet("".join(i for i in self.css['searchbar']))
         self.searchbutton.setStyleSheet("".join(i for i in self.css['searchbutton']))
@@ -135,18 +140,19 @@ class Interface(QWidget):
         return self.westGroupBox
 
     def getWeatherInfo(self, city_name:str):
-        self.searchbar.setText(" ")
+        self.searchbar.setText("")
         if self.cityname.text().lower() != city_name.lower():
             try:
                 self.weather = weather(city_name)['result'][0]
+                print(self.weather)
 
                 self.cityname.setText(city_name.capitalize())
-                self.icon.setPixmap(QPixmap(f"Databases/Images/{self.weather['status']}.png"))
+                self.icon.setSource(self.weather['icon'])
                 self.degree.setText(f"Hava {self.weather['description'].capitalize()} {self.weather['degree']}°C\nEn Az: {self.weather['min']} En Fazla: {self.weather['max']} Nem: {self.weather['humidity']}")
                 self.date.setText(f"{self.weather['date']}\n{self.weather['day']}")
                 
                 heart_mode = "heartFalse"
-                if city_name.lower() in self.favorite_cities['names_of_cities']: heart_mode = "heartTrue"
+                if city_name.lower() in self.citiesJson['favorite_cities']: heart_mode = "heartTrue"
                 
                 self.favoritebutton.setIcon(QIcon(f"Databases/Images/{heart_mode}.png"))
             except IndexError:
@@ -154,18 +160,19 @@ class Interface(QWidget):
     
     def settingFavoriteCity(self):
         cityname=self.cityname.text().lower()
-        if cityname in self.favorite_cities['names_of_cities'] :
-            if len(self.favorite_cities['names_of_cities']) == 1: return
-            index = self.favorite_cities['names_of_cities'].index(cityname)
-            self.favorite_cities['names_of_cities'].pop(index)
+        if cityname.strip() in self.citiesJson['favorite_cities'] :
+            index = self.citiesJson['favorite_cities'].index(cityname)
+            self.citiesJson['favorite_cities'].pop(index)
+            self.buttons[index].destroy()
             self.westLayout.removeWidget(self.buttons[index])
             self.buttons.pop(index)
             self.favoritebutton.setIcon(QIcon(f"Databases/Images/heartFalse.png"))
+            print(cityname+" silindi")
         else:
-            self.favorite_cities['names_of_cities'].append(cityname.strip())
+            self.citiesJson['favorite_cities'].append(cityname.strip())
             self.createbutton(cityname)
             self.favoritebutton.setIcon(QIcon(f"Databases/Images/heartTrue.png"))
-        writeJ(self.favorite_cities,"Databases/Jsons/favorite_cities.json")
+        writeJ(self.citiesJson,"Databases/Jsons/cities.json")
 
     def createbutton(self,text):
         button = QPushButton(self,text=text.capitalize())
@@ -183,7 +190,19 @@ class Interface(QWidget):
         if frameRect.intersects(event.rect()):
             painter = QPainter(self)
             painter.drawPixmap(frameRect.left(), frameRect.top(), currentFrame)
-
+    def searchFavorite(self,text):
+        x = 0
+        for button in self.buttons:
+            if text.lower() not in button.text().lower():
+                x+=1   
+            if text.lower() in button.text().lower():
+                button.show()
+            else:
+                if x == len(self.buttons):
+                    for button in self.buttons:
+                        button.show()
+                    return
+                button.hide()
 if __name__ == '__main__':
     app = QApplication([])
     Interface = Interface()
