@@ -1,5 +1,5 @@
 {   
-    "westGroupBox":[
+    "westGroupBox/scroolbar":[
         "border:2px solid #079096;",
         "border-top-left-radius: 30px;",
         "border-bottom-left-radius: 30px;",
@@ -37,7 +37,18 @@
         "background-color: #aad8d3;",
         "color: #222222;",
         "border:2px solid #aad8d3;",
-        "border-radius: 25px;"
+        "border-radius: 25px;"],
+    "titleBar":[
+        "background-color: #079096;",
+        "color: #222222;"],
+    "CloseWindowButton":[
+        "background-color:#aad8d3;",
+        "border:0px solid black;",
+        "border-radius:10px;"],
+    "MinimizeWindowButton":[
+        "background-color:#aad8d3;",
+        "border:0px solid black;",
+        "border-radius:10px;"
     ]
 
 }

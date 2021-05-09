@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import (QPushButton,
+                                QScrollArea,
                                 QApplication,
                                 QWidget,
                                 QGridLayout,
@@ -18,6 +19,7 @@ from PyQt5.QtCore import Qt,QSize
 from Modules.customwidgets import ImageBox
 from Modules.jsonHelper import writeJ, readJ
 from Modules.weather import weather
+from Modules.titlebar import CustomTitleBar
 class Interface(QWidget):
     def __init__(self):
         super().__init__()
@@ -26,7 +28,7 @@ class Interface(QWidget):
         
         self.css = readJ("Databases/Jsons/css.json")
         self.citiesJson = readJ("Databases/Jsons/cities.json")
-
+        self.setWindowFlags(Qt.FramelessWindowHint)
         self.movie = QMovie("Databases/Images/weather.gif")
         self.movie.frameChanged.connect(self.repaint)
         self.movie.start()
@@ -34,6 +36,7 @@ class Interface(QWidget):
         self.showLayouts()
         
     def showLayouts(self):
+        titleBar = self.TitleBar()
         self.East_Area_Layout = self.eastArea()
         self.West_Area_Layout = self.westArea()
 
@@ -41,7 +44,20 @@ class Interface(QWidget):
         self.SouthLayout.addWidget(self.West_Area_Layout,0,0)
         self.SouthLayout.addWidget(self.East_Area_Layout,0,1)
 
-        self.setLayout(self.SouthLayout)
+        self.layout  = QVBoxLayout()
+        self.layout.setContentsMargins(0,0,0,0)
+        self.layout.addWidget(titleBar)
+        self.layout.addLayout(self.SouthLayout)
+
+        self.setLayout(self.layout)
+    def TitleBar(self):
+        customTitleBar = CustomTitleBar(self,title="Hava Durumu")
+        customTitleBar.setStyleSheet("".join(i for i in self.css['titleBar']))
+        customTitleBar.CloseWindowButton.setStyleSheet("".join(i for i in self.css['CloseWindowButton']))
+        customTitleBar.MinimizeWindowButton.setStyleSheet("".join(i for i in self.css['MinimizeWindowButton']))
+        customTitleBar.CloseWindowButton.setCursor(QCursor(Qt.PointingHandCursor))
+        customTitleBar.MinimizeWindowButton.setCursor(QCursor(Qt.PointingHandCursor))
+        return customTitleBar
     def eastArea(self):
         self.icon = ImageBox(source = "")  
         self.icon.setFixedSize(120,120)
@@ -58,7 +74,7 @@ class Interface(QWidget):
         self.northeastLayout.addWidget(self.icon)
         self.northeastLayout.addSpacing(20)
         self.northeastLayout.addWidget(self.degree)
-        self.northeastLayout.addSpacing(300)
+        self.northeastLayout.addSpacing(200)
         self.northeastLayout.addWidget(self.date)
 
 
@@ -95,12 +111,16 @@ class Interface(QWidget):
 
     def westArea(self):
         self.westGroupBox = QGroupBox()
+        self.scroolbar = QScrollArea()
+        self.scroolbar.setWidget(self.westGroupBox)
+        self.scroolbar.setWidgetResizable(True)
         self.westLayout = QVBoxLayout()
-        self.westGroupBox.setFixedWidth(300)
+        self.scroolbar.setFixedWidth(300)
         
         Completer = QCompleter(self.citiesJson['cities'])
         Completer.popup().setFont(QFont('Times', 15))
         self.searchbar = QLineEdit(self)
+        self.searchbar.returnPressed.connect(lambda: self.getWeatherInfo(self.searchbar.text()))
         self.searchbar.setCompleter(Completer)
         self.searchbar.setFixedHeight(50)
         self.searchbar.setFont(QFont('Times', 15))
@@ -131,20 +151,20 @@ class Interface(QWidget):
 
         self.westLayout.setAlignment(Qt.AlignTop)
         self.westGroupBox.setLayout(self.westLayout)
+        self.scroolbar.setStyleSheet("".join(i for i in self.css['westGroupBox/scroolbar']))
         Completer.popup().setStyleSheet("".join(i for i in self.css['Completer']))
-        self.westGroupBox.setStyleSheet("".join(i for i in self.css['westGroupBox']))
+        self.westGroupBox.setStyleSheet("".join(i for i in self.css['westGroupBox/scroolbar']))
         self.searchbar.setStyleSheet("".join(i for i in self.css['searchbar']))
         self.searchbutton.setStyleSheet("".join(i for i in self.css['searchbutton']))
         self.searchGroupBox.setStyleSheet("".join(i for i in self.css['searchGroupBox']))
 
-        return self.westGroupBox
+        return self.scroolbar
 
     def getWeatherInfo(self, city_name:str):
         self.searchbar.setText("")
         if self.cityname.text().lower() != city_name.lower():
             try:
                 self.weather = weather(city_name)['result'][0]
-                print(self.weather)
 
                 self.cityname.setText(city_name.capitalize())
                 self.icon.setSource(self.weather['icon'])
@@ -167,7 +187,7 @@ class Interface(QWidget):
             self.westLayout.removeWidget(self.buttons[index])
             self.buttons.pop(index)
             self.favoritebutton.setIcon(QIcon(f"Databases/Images/heartFalse.png"))
-            print(cityname+" silindi")
+            
         else:
             self.citiesJson['favorite_cities'].append(cityname.strip())
             self.createbutton(cityname)
